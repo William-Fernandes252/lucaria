@@ -1,0 +1,30 @@
+volumes:
+  postgres_data:
+  postgres_data_backups:
+
+
+services:
+  db:
+    image: bitnami/postgresql:latest
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_data_backups:/backups
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRESQL_USERNAME=lucaria
+      - POSTGRESQL_PASSWORD=lucaria
+      - POSTGRESQL_DATABASE=lucaria
+
+  ollama:
+    image: ollama/ollama:latest
+    runtime: nvidia
+    ports:
+      - "11434:11434"
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [ gpu ]
