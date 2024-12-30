@@ -1,18 +1,9 @@
-import { z } from "zod";
+import { Config } from "effect";
 
-const schema = z.object({
-  NODE_ENV: z
-    .enum(["development", "production", "test"])
-    .default("development"),
-  DATABASE_URL: z.string(),
-  DIRECT_URL: z.string(),
-  AUTH_SECRET: z.string(),
-});
+export { default as awsConfig } from "./aws";
 
-const result = schema.safeParse(process.env);
-if (result.success === false) {
-  console.error("Invalid environment variables: ", result.error);
-  process.exit(1);
-}
+export { default as databaseConfig } from "./database";
 
-export const config = result.data;
+export { nodeEnv } from "./runtime";
+
+export const authSecret = Config.string("AUTH_SECRET");
