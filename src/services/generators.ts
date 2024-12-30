@@ -72,43 +72,38 @@ export const QuizGeneratorLive = Layer.effect(
     const system = yield* System;
     const systemMessage = yield* system.message;
 
-    const decodeResult = Schema.decodeUnknownSync(QuizGenerationResult);
-
-    const errorHandler = (error: unknown) =>
-      Effect.fail(
-        new GenerationError({
-          message: "An error occurred during the quiz generation.",
-          cause: error,
-        }),
+    function generateForPrompt(prompt: string) {
+      return pipe(
+        Effect.promise(() =>
+          generateObject({
+            model: llm,
+            schema: jsonSchema(JSONSchema.make(QuizGenerationResult)),
+            system: systemMessage,
+            prompt,
+          }),
+        ),
+        Effect.andThen((result) => result.object),
+        Effect.andThen(Schema.decodeUnknownSync(QuizGenerationResult)),
+        Effect.catchAll((error: unknown) =>
+          Effect.fail(
+            new GenerationError({
+              message: "An error occurred during the quiz generation.",
+              cause: error,
+            }),
+          ),
+        ),
       );
+    }
 
     return QuizGenerator.of({
       generateFromTheme(theme, questions) {
-        return pipe(
-          Effect.promise(() =>
-            generateObject({
-              model: llm,
-              schema: jsonSchema(JSONSchema.make(QuizGenerationResult)),
-              system: systemMessage,
-              prompt: `Generate a quiz with the theme "${theme}" with ${questions} questions.`,
-            }),
-          ),
-          Effect.andThen(decodeResult),
-          Effect.catchAll(errorHandler),
+        return generateForPrompt(
+          `Generate a quiz using the theme "${theme}". with ${questions} questions.`,
         );
       },
       generateFromKeywords(keywords, questions) {
-        return pipe(
-          Effect.promise(() =>
-            generateObject({
-              model: llm,
-              schema: jsonSchema(JSONSchema.make(QuizGenerationResult)),
-              system: systemMessage,
-              prompt: `Generate a quiz using the keywords "${keywords.join(", ")}". with ${questions} questions.`,
-            }),
-          ),
-          Effect.andThen(decodeResult),
-          Effect.catchAll(errorHandler),
+        return generateForPrompt(
+          `Generate a quiz using the keywords "${keywords}". with ${questions} questions.`,
         );
       },
       generateFromUrl(url, questions) {
