@@ -1,6 +1,8 @@
+import { nodeEnv } from "@/config";
 import { bedrock } from "@ai-sdk/amazon-bedrock";
 import type { LanguageModelV1 } from "ai";
 import { Config, type ConfigError, Context, Effect, Layer } from "effect";
+import { ollama } from "ollama-ai-provider";
 
 /**
  * Language model provider.
@@ -16,12 +18,11 @@ export class LanguageModelProvider extends Context.Tag("Model")<
 export const LanguageModelProviderLive = Layer.effect(
   LanguageModelProvider,
   Effect.gen(function* () {
-    const model = yield* Config.literal(
-      "anthropic.claude-3-5-sonnet-20240620-v1:0",
-    )("BEDROCK_MODEL_ID");
+    const model = yield* Config.string("MODEL_ID");
+    const environment = yield* nodeEnv;
     return {
       model: Effect.succeed(
-        bedrock("anthropic.claude-3-5-sonnet-20240620-v1:0"),
+        environment === "production" ? bedrock(model) : ollama(model),
       ),
     };
   }),
