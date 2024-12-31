@@ -1,12 +1,14 @@
 import { GenerationError } from "@/lib/errors";
 import {
-  type KeywordsSchema,
-  type QuestionsSchema,
-  QuizGenerationResult,
-  type ThemeSchema,
+  type KeywordsType,
+  type QuestionsType,
+  QuizGenerationResultSchema,
+  type QuizGenerationResultType,
+  type ThemeType,
+  type URLType,
 } from "@/schemas/generations";
-import { generateObject, jsonSchema } from "ai";
-import { Context, Effect, JSONSchema, Layer, Schema, pipe } from "effect";
+import { generateObject } from "ai";
+import { Context, Effect, Layer, pipe } from "effect";
 import { System, SystemLive } from "./messages";
 import { LanguageModelProvider, LanguageModelProviderLive } from "./models";
 
@@ -24,9 +26,9 @@ export class QuizGenerator extends Context.Tag("QuizGenerator")<
      * @returns A quiz generation effect.
      */
     generateFromTheme: (
-      theme: typeof ThemeSchema.Type,
-      questions: typeof QuestionsSchema.Type,
-    ) => Effect.Effect<typeof QuizGenerationResult.Type, GenerationError>;
+      theme: ThemeType,
+      questions: QuestionsType,
+    ) => Effect.Effect<QuizGenerationResultType, GenerationError>;
 
     /**
      * Generate a quiz from keywords.
@@ -36,9 +38,9 @@ export class QuizGenerator extends Context.Tag("QuizGenerator")<
      * @returns A quiz generation effect.
      */
     generateFromKeywords: (
-      keywords: typeof KeywordsSchema.Type,
-      questions: typeof QuestionsSchema.Type,
-    ) => Effect.Effect<typeof QuizGenerationResult.Type, GenerationError>;
+      keywords: KeywordsType,
+      questions: QuestionsType,
+    ) => Effect.Effect<QuizGenerationResultType, GenerationError>;
 
     /**
      * Generate a quiz from a URL.
@@ -50,9 +52,9 @@ export class QuizGenerator extends Context.Tag("QuizGenerator")<
      * @returns A quiz generation effect.
      */
     generateFromUrl: (
-      url: URL,
-      questions: typeof QuestionsSchema.Type,
-    ) => Effect.Effect<typeof QuizGenerationResult.Type, GenerationError>;
+      url: URLType,
+      questions: QuestionsType,
+    ) => Effect.Effect<QuizGenerationResultType, GenerationError>;
   }
 >() {}
 
@@ -77,13 +79,15 @@ export const QuizGeneratorLive = Layer.effect(
         Effect.promise(() =>
           generateObject({
             model: llm,
-            schema: jsonSchema(JSONSchema.make(QuizGenerationResult)),
+            schema: QuizGenerationResultSchema,
             system: systemMessage,
             prompt,
           }),
         ),
         Effect.andThen((result) => result.object),
-        Effect.andThen(Schema.decodeUnknownSync(QuizGenerationResult)),
+        Effect.andThen(
+          QuizGenerationResultSchema.parse.bind(QuizGenerationResultSchema),
+        ),
         Effect.catchAll((error: unknown) =>
           Effect.fail(
             new GenerationError({

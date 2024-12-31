@@ -1,86 +1,71 @@
-import { Schema } from "effect";
+import { z } from "zod";
 
 /**
  * Schema for questions amount.
  */
-export const QuestionsSchema = Schema.Positive.annotations({
-  description: "The amount of questions in the quiz.",
-  examples: [5, 10],
-  message: () => "The amount of questions must be a positive integer.",
-}).pipe(Schema.greaterThanOrEqualTo(1));
+export const QuestionsSchema = z
+  .number()
+  .positive({ message: "The amount of questions must be a positive integer." })
+  .min(1, { message: "The amount of questions must be at least 1." })
+  .describe("The amount of questions in the quiz.");
+
+export type QuestionsType = z.infer<typeof QuestionsSchema>;
 
 /**
  * Schema for a quiz theme.
  */
-export const ThemeSchema = Schema.String.annotations({
-  description: "A theme for a quiz.",
-  examples: ["Next.js", "Vite"],
-  message: () => "The theme must be alphanumeric.",
-}).pipe(Schema.minLength(2), Schema.maxLength(50), Schema.trimmed());
+export const ThemeSchema = z
+  .string()
+  .min(2, { message: "The theme must have at least 2 characters." })
+  .max(50, { message: "The theme must have at most 50 characters." })
+  .trim()
+  .regex(/^[a-zA-Z0-9\s]+$/, { message: "The theme must be alphanumeric." })
+  .describe("A theme for a quiz.");
+
+export type ThemeType = z.infer<typeof ThemeSchema>;
 
 /**
  * Schema for a quiz keywords.
  */
-export const KeywordsSchema = Schema.Array(Schema.String)
-  .annotations({
-    description: "Keywords for a quiz.",
-    examples: [["React", "TypeScript"], ["JavaScript"]],
-    message: () => "The keywords must be alphanumeric.",
-  })
-  .pipe(Schema.maxItems(10), Schema.minItems(2));
+export const KeywordsSchema = z
+  .array(z.string())
+  .min(2, { message: "The keywords must include at least 2 items." })
+  .max(10, { message: "The keywords must include at most 10 items." })
+  .describe("Keywords for a quiz.");
 
-export const URLSchema = Schema.URL.annotations({
-  description: "A URL.",
-  examples: [new URL("https://example.com")],
-});
+export type KeywordsType = z.infer<typeof KeywordsSchema>;
+
+/**
+ * Schema for a URL.
+ */
+export const URLSchema = z
+  .string()
+  .url({ message: "Must be a valid URL." })
+  .describe("A URL.");
+
+export type URLType = z.infer<typeof URLSchema>;
 
 /**
  * Schema for quiz generation result.
  */
-export const QuizGenerationResult = Schema.Struct({
-  title: Schema.String.annotations({
-    description: "The title of the quiz.",
-    examples: ["Next.js Quiz", "Vite Quiz"],
-  }),
-  questions: Schema.Array(
-    Schema.Struct({
-      question: Schema.String.annotations({
-        description: "The question.",
-        examples: ["What is React?", "What is Vite?"],
-      }),
-      options: Schema.Array(Schema.String).annotations({
-        description: "The possible answers.",
-        examples: [
-          [
-            "A library for building user interfaces",
-            "A framework for building user interfaces",
-          ],
-          ["A build tool", "A bundler"],
-        ],
-      }),
-      correct: Schema.Int.annotations({
-        description: "The index of the correct answer.",
-        examples: [0, 1],
-      }),
-    }),
-  ).annotations({
-    description: "The questions in the quiz.",
-    examples: [
-      [
-        {
-          question: "What is React?",
-          options: [
-            "A library for building user interfaces",
-            "A framework for building user interfaces",
-          ],
-          correct: 1,
-        },
-        {
-          question: "What is Vite?",
-          options: ["A build tool", "A bundler"],
-          correct: 0,
-        },
-      ],
-    ],
-  }),
-});
+export const QuizGenerationResultSchema = z
+  .object({
+    title: z.string().describe("The title of the quiz."),
+    questions: z
+      .array(
+        z.object({
+          question: z.string().describe("The question."),
+          options: z.array(z.string()).describe("The possible answers."),
+          correct: z
+            .number()
+            .int()
+            .describe("The index of the correct answer."),
+        }),
+      )
+      .describe("The questions in the quiz."),
+  })
+  .describe("Schema for quiz generation result.");
+
+export type QuizGenerationResultType = z.infer<
+  typeof QuizGenerationResultSchema
+>;
