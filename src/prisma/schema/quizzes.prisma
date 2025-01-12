@@ -1,0 +1,51 @@
+model Quiz {
+  id          String     @id @default(cuid())
+  title       String
+  description String?
+  questions   Question[]
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  author      User?      @relation(fields: [authorId], references: [id])
+  authorId    String
+
+  tags Tagging[]
+}
+
+model Question {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  options     Option[]
+  quiz        Quiz     @relation(fields: [quizId], references: [id])
+  quizId      String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  sequence    Int      @default(0)
+}
+
+model Option {
+  id         String   @id @default(cuid())
+  title      String
+  question   Question @relation(fields: [questionId], references: [id])
+  questionId String
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+}
+
+model Tag {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tags Tagging[]
+}
+
+model Tagging {
+  id        Int      @id @default(autoincrement())
+  quiz      Quiz     @relation(fields: [quizId], references: [id])
+  quizId    String
+  tag       Tag      @relation(fields: [tagId], references: [id])
+  tagId     Int
+  createdAt DateTime @default(now())
+}
