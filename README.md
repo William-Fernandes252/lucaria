@@ -23,14 +23,14 @@ Whether you're looking to test your knowledge, create engaging learning experien
 
 ## Requirements
 
-This project uses Next.js 15 and React 19. In order to run it locally, make shure to have installed
+This project uses Next.js 15 and React 19. In order to run it locally, make sure to have installed
 
 - Nodejs `v22.9.0`
 - pNpm `v9.7.0`
 
 ## Getting Started
 
-Lucaria leverages the [LangChain](https://js.langchain.com/docs/introduction/) framework capabilities to consume [Large Language Models](https://en.wikipedia.org/wiki/Large_language_model) for generating structured quizzes from different kinds of user inputs.
+Lucaria leverages [Vercel's AI SDK](https://sdk.vercel.ai/docs/introduction#ai-sdk) capabilities to apply [Large Language Models](https://en.wikipedia.org/wiki/Large_language_model) for generating structured quizzes from different kinds of user inputs.
 
 To run, test and develop in your machine, it is necessary to have a model server available for the application.
 
