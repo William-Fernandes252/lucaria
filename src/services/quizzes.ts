@@ -1,18 +1,21 @@
 import { GenerationError } from "@/lib/errors";
-import { generateObject } from "ai";
-import { Context, Effect, Layer, pipe } from "effect";
-import { z } from "zod";
 import {
   type Input,
   MessageBuilder,
   MessageBuilderLive,
   System,
   SystemLive,
-} from "../lib/messages";
+} from "@/lib/messages";
+import { Bedrock, LanguageModelProvider } from "@/lib/models";
 import {
-  LanguageModelProvider,
-  LanguageModelProviderLive,
-} from "../lib/models";
+  type CreateQuizSchemaType,
+  PrismaQuizRepository,
+  type Quiz,
+  QuizRepository,
+} from "@/repositories/quizzes";
+import { generateObject } from "ai";
+import { Context, Effect, Layer, pipe } from "effect";
+import { z } from "zod";
 
 /**
  * Schema for quiz generation result.
@@ -49,9 +52,15 @@ export class QuizService extends Context.Tag("QuizService")<
      * @param input The user input.
      * @returns A quiz generation effect.
      */
-    generateQuiz: (
-      input: Input,
-    ) => Effect.Effect<QuizGenerationResult, GenerationError>;
+    generateQuiz: (input: Input) => Effect.Effect<Quiz, GenerationError>;
+
+    /**
+     * Create a quiz.
+     *
+     * @param data The data to create the quiz.
+     * @returns An effect that creates a quiz.
+     */
+    createQuiz: (data: CreateQuizSchemaType) => Effect.Effect<Quiz>;
   }
 >() {}
 
@@ -59,9 +68,10 @@ export class QuizService extends Context.Tag("QuizService")<
  * Configuration for quiz generation.
  */
 const GenerationConfigLive = Layer.mergeAll(
-  LanguageModelProviderLive,
+  Bedrock,
   SystemLive,
   MessageBuilderLive,
+  PrismaQuizRepository,
 );
 
 /**
@@ -70,12 +80,14 @@ const GenerationConfigLive = Layer.mergeAll(
 export const QuizServiceLive = Layer.effect(
   QuizService,
   Effect.gen(function* () {
-    const llmProvider = yield* LanguageModelProvider;
-    const llm = yield* llmProvider.model;
-    const system = yield* System;
-    const systemMessage = yield* system.message;
+    const llm = yield* (yield* LanguageModelProvider)();
+    const system = yield* (yield* System).message;
     const messageBuilder = yield* MessageBuilder;
+    const quizRepository = yield* QuizRepository;
     return QuizService.of({
+      createQuiz(data) {
+        return quizRepository.createQuiz(data);
+      },
       generateQuiz(input) {
         return pipe(
           messageBuilder.buildForInput(input),
@@ -83,13 +95,28 @@ export const QuizServiceLive = Layer.effect(
             generateObject({
               model: llm,
               schema: QuizGenerationResultSchema,
-              system: systemMessage,
+              system,
               messages,
             }),
           ),
           Effect.andThen((result) => result.object),
           Effect.andThen(
             QuizGenerationResultSchema.parse.bind(QuizGenerationResultSchema),
+          ),
+          Effect.andThen(({ title, questions }) =>
+            this.createQuiz({
+              title,
+              questions: questions.map(
+                ({ question, options, correct }, index) => ({
+                  sequence: index,
+                  enunciation: question,
+                  options: options.map((option, index) => ({
+                    enunciation: option,
+                    correct: index === correct,
+                  })),
+                }),
+              ),
+            }),
           ),
           Effect.catchAll((error: unknown) =>
             Effect.fail(

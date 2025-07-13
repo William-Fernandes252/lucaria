@@ -1,11 +1,17 @@
 import { Data } from "effect";
 
 /**
- * Generation error. This error is thrown when a quiz cannot be generated.
+ * Base error for the application.
  */
-export class GenerationError extends Data.Error<{
+export class BaseError extends Data.Error<{
   message: string;
   cause?: unknown;
-}> {
+  context?: unknown;
+}> {}
+
+/**
+ * Generation error. This error is thrown when a quiz cannot be generated.
+ */
+export class GenerationError extends BaseError {
   readonly _tag = "GenerationError";
 }

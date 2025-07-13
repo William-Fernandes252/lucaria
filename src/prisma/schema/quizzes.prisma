@@ -13,8 +13,7 @@ model Quiz {
 
 model Question {
   id          String   @id @default(cuid())
-  title       String
-  description String?
+  enunciation String
   options     Option[]
   quiz        Quiz     @relation(fields: [quizId], references: [id])
   quizId      String
@@ -24,12 +23,12 @@ model Question {
 }
 
 model Option {
-  id         String   @id @default(cuid())
-  title      String
-  question   Question @relation(fields: [questionId], references: [id])
-  questionId String
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
+  id          String   @id @default(cuid())
+  enunciation String
+  question    Question @relation(fields: [questionId], references: [id])
+  questionId  String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
 
 model Tag {

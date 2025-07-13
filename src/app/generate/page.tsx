@@ -18,6 +18,10 @@ type GenerateProps = {
 
 export default async function Generate({ searchParams }: GenerateProps) {
   const result = await Effect.runPromiseExit(generateQuiz(await searchParams));
+  if (result._tag === "Failure") {
+    console.error(result.cause);
+  }
+
   return result._tag === "Success" ? (
     <main className="flex min-h-screen flex-col items-center justify-center p-16">
       <Card className="w-full max-w-3xl mx-auto">
@@ -26,23 +30,25 @@ export default async function Generate({ searchParams }: GenerateProps) {
           <CardDescription>Generation result.</CardDescription>
         </CardHeader>
         <CardContent>
-          {result.value.questions.map(({ question, options, correct }, i) => (
-            <div key={question} className="mb-6">
-              <h3 className="text-xl font-semibold mb-2">Question {i + 1}</h3>
-              <p>{question}</p>
-              <RadioGroup className="my-4 ml-4 list-disc [&>div]:mt-2">
-                {options.map((option, j) => (
-                  <div key={option} className="flex items-center space-x-3">
-                    <RadioGroupItem
-                      value={j.toString()}
-                      id={`option-${i}-${j}`}
-                    />
-                    <Label htmlFor={`option-${i}-${j}`}>{option}</Label>
-                  </div>
-                ))}
-              </RadioGroup>
-            </div>
-          ))}
+          {result.value.questions.map(
+            ({ enunciation: question, options, id }, i) => (
+              <div key={id} className="mb-6">
+                <h3 className="text-xl font-semibold mb-2">Question {i + 1}</h3>
+                <p>{question}</p>
+                <RadioGroup className="my-4 ml-4 list-disc [&>div]:mt-2">
+                  {options.map(({ id, enunciation: option }, j) => (
+                    <div key={id} className="flex items-center space-x-3">
+                      <RadioGroupItem
+                        value={j.toString()}
+                        id={`option-${i}-${j}`}
+                      />
+                      <Label htmlFor={`option-${i}-${j}`}>{option}</Label>
+                    </div>
+                  ))}
+                </RadioGroup>
+              </div>
+            ),
+          )}
         </CardContent>
         <CardFooter>
           <Button className="btn">Generate Another Quiz</Button>

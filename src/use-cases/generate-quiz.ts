@@ -16,8 +16,8 @@ export default function generateQuiz(params: unknown) {
         yield* Effect.fail(error);
       }
 
-      const quizGenerator = yield* QuizService;
-      return yield* quizGenerator.generateQuiz(data as Input);
+      const quizService = yield* QuizService;
+      return yield* quizService.generateQuiz(data as Input);
     }),
     QuizServiceLive,
   );

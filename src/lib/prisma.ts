@@ -6,7 +6,7 @@ import { Config, type ConfigError, Context, Effect, Layer } from "effect";
  */
 export class PrismaClientProvider extends Context.Tag("Prisma")<
   PrismaClientProvider,
-  { client: Effect.Effect<PrismaClient, ConfigError.ConfigError> }
+  () => Effect.Effect<PrismaClient, ConfigError.ConfigError>
 >() {}
 
 /**
@@ -19,6 +19,6 @@ export const PrismaClientProviderLive = Layer.effect(
     const client = new PrismaClient({
       log: log === "development" ? ["query"] : [],
     });
-    return { client: Effect.succeed(client) };
+    return () => Effect.succeed(client);
   }),
 );
